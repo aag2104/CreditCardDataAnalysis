@@ -1,0 +1,64 @@
+import pandas as pd ## This imports the pandas library, which is commonly used for data manipulation and analysis in Python. It’s abbreviated as pd for convenience.
+
+# Load dataset
+data = pd.read_csv('/Users/alexandrageer/Desktop/creditcard.csv')
+
+# Inspect the data
+print(data.head()) ## The .head() method returns the first five rows of the data DataFrame by default.
+print(data.info()) ## The .info() method provides a summary of the DataFrame
+
+## The .isnull() method checks each cell in the DataFrame to see if it contains a null (missing) value. It returns True for missing values and False otherwise. .sum() then adds up the True values (interpreted as 1) for each column, giving the total number of missing values per column.
+This helps you quickly identify if any columns contain missing values that need to be handled.
+
+print(data.isnull().sum())
+
+-------------------------------------------------
+
+from imblearn.over_sampling import SMOTE ## SMOTE from imblearn.over_sampling is a technique used to handle imbalanced datasets by generating synthetic samples for the minority class. This helps balance the dataset, making it easier for machine learning models to learn patterns in the minority class.
+
+from sklearn.model_selection import train_test_split ## train_test_split from sklearn.model_selection is a function that splits the dataset into training and testing sets.
+
+# Separate features and target
+X = data.drop(columns=['Class']) ## Here, X is created by dropping the 'Class' column from data. X represents all the input features used to make predictions.
+y = data['Class'] ## y is the 'Class' column, which contains the target variable (label) indicating whether a transaction is fraudulent (usually represented by 1) or not (0).
+
+# Split data into train and test sets
+## train_test_split splits X and y into training and testing subsets. X_train and y_train will be used to train the model. X_test and y_test will be used to evaluate the model.
+## test_size=0.2 specifies that 20% of the data is allocated to the test set, and the remaining 80% goes to the training set. random_state=42 ensures reproducibility, meaning the split will be the same each time you run this code.
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42) 
+
+# Apply SMOTE to balance the classes
+sm = SMOTE(random_state=42)
+
+## fit_resample generates synthetic samples for the minority class (fraud cases) in y_train, making the classes more balanced. X_train_res and y_train_res are the resampled training data, now with a balanced number of fraudulent and non-fraudulent cases.
+X_train_res, y_train_res = sm.fit_resample(X_train, y_train)
+
+-------------------------------------------------
+
+## RandomForestClassifier: A machine learning model from sklearn.ensemble that combines multiple decision trees to improve accuracy and reduce overfitting, making it robust for classification tasks.
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# Train a Random Forest model
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train_res, y_train_res) ## model.fit(X_train_res, y_train_res): This trains (or "fits") the model using the training data (X_train_res for features and y_train_res for labels).
+
+# Make predictions
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Classification Report:\n", classification_report(y_test, y_pred))
+
+-------------------------------------------------
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt="d")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.title("Confusion Matrix")
+plt.show()
